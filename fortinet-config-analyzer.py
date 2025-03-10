@@ -43,7 +43,7 @@ def create_excel_report(system_info, interfaces, dhcp_pools, hosts, address_grou
 
     # Create headers
     interface_headers = ["Interface", "Vdom", "Adresse IP", "NetMask", "VLAN ID", "Ip Secondaire", 
-                       "Accès", "Rôle", "Type", "Membre", "Tag", "Commentaire"]
+                       "Accès", "Mode", "Rôle", "Type", "Membre", "Tag", "Commentaire"] #add
 
     for col, header in enumerate(interface_headers, 1):
         cell = ws_interfaces.cell(row=1, column=col)

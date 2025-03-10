@@ -51,6 +51,7 @@ def parse_interfaces(input_file):
                     "VLAN ID": "",
                     "Ip Secondaire": "",
                     "Accès": "",
+                    "Mode": "", #add
                     "Rôle": "",
                     "Type": "",
                     "Membre": "",
@@ -108,6 +109,8 @@ def parse_interfaces(input_file):
                         current_interface_data["Type"] = "Vlan"
                     elif stripped_line.startswith("set allowaccess "):
                         current_interface_data["Accès"] = stripped_line[15:].strip()
+                    elif stripped_line.startswith("set mode"): #add
+                        current_interface_data["Mode"] = stripped_line[9:].strip().strip('"') #add
                     elif stripped_line.startswith("set role "):
                         current_interface_data["Rôle"] = stripped_line[9:].strip()
                     elif stripped_line.startswith("set type ") and not current_interface_data["VLAN ID"]:
