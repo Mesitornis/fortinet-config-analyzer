@@ -48,7 +48,7 @@ def parse_interfaces(input_file):
                     "Vdom": "",
                     "Adresse IP": "",
                     "NetMask": "",
-                    "Distance Administrative": "", #add
+                    "Distance Administrative": "", 
                     "VLAN ID": "",
                     "Ip Secondaire": "",
                     "Accès": "",
