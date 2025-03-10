@@ -1,6 +1,6 @@
 # Fortinet config Analyzer
 
-# Frensh
+# French
 
 ## Présentation du Projet
 
