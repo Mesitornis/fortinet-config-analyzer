@@ -1,6 +1,6 @@
-import re
+#import re
 import os
-import sys
+#import sys
 import datetime
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -530,7 +530,7 @@ def create_excel_report(system_info, interfaces, dhcp_pools, hosts, address_grou
     now = datetime.datetime.now()  # Current date based on your input
     timestamp = now.strftime("%Y%m%d-%H%M%S")
     input_filename = os.path.basename(input_file)
-    output_filename = f"{timestamp}-{input_filename}.xlsx"
+    output_filename = f"{timestamp}-{input_filename[:-5]}.xlsx"
 
     # Save Excel file
     wb.save(output_filename)
