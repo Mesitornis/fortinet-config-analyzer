@@ -48,10 +48,11 @@ def parse_interfaces(input_file):
                     "Vdom": "",
                     "Adresse IP": "",
                     "NetMask": "",
+                    "Distance Administrative": "", #add
                     "VLAN ID": "",
                     "Ip Secondaire": "",
                     "Accès": "",
-                    "Mode": "", #add
+                    "Mode": "", 
                     "Rôle": "",
                     "Type": "",
                     "Membre": "",
@@ -103,14 +104,16 @@ def parse_interfaces(input_file):
                         if len(parts) >= 2:
                             current_interface_data["Adresse IP"] = parts[0]
                             current_interface_data["NetMask"] = parts[1]
+                    elif stripped_line.startswith("set distance"):
+                        current_interface_data["Distance Administrative"] = stripped_line[12:].strip().strip('"')
                     elif stripped_line.startswith("set vlanid "):
                         current_interface_data["VLAN ID"] = stripped_line[11:].strip()
                         # Si un VLAN ID est défini, définir automatiquement le type sur "Vlan"
                         current_interface_data["Type"] = "Vlan"
                     elif stripped_line.startswith("set allowaccess "):
                         current_interface_data["Accès"] = stripped_line[15:].strip()
-                    elif stripped_line.startswith("set mode"): #add
-                        current_interface_data["Mode"] = stripped_line[9:].strip().strip('"') #add
+                    elif stripped_line.startswith("set mode"): 
+                        current_interface_data["Mode"] = stripped_line[9:].strip().strip('"') 
                     elif stripped_line.startswith("set role "):
                         current_interface_data["Rôle"] = stripped_line[9:].strip()
                     elif stripped_line.startswith("set type ") and not current_interface_data["VLAN ID"]:
