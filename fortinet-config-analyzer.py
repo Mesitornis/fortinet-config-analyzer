@@ -1,6 +1,4 @@
-#import re
 import os
-#import sys
 import datetime
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
