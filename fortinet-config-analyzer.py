@@ -41,7 +41,7 @@ def create_excel_report(system_info, interfaces, dhcp_pools, hosts, address_grou
 
     # Create headers
     interface_headers = ["Interface", "Vdom", "Adresse IP", "NetMask", "Distance Administrative", "VLAN ID", "Ip Secondaire", 
-                       "Accès", "Mode", "Rôle", "Type", "Membre", "Tag", "Commentaire"]
+                       "Accès", "Zone", "Mode", "Rôle", "Type", "Membre", "Tag", "Commentaire"] #ADD
 
     for col, header in enumerate(interface_headers, 1):
         cell = ws_interfaces.cell(row=1, column=col)
@@ -552,7 +552,7 @@ def main():
         address_groups = parse_address_groups.parse_address_groups(input_file)
         users = parse_users.parse_users(input_file)
         user_groups = parse_user_groups.parse_user_groups(input_file)
-        zones = parse_zones.parse_zones(input_file)
+        zones = parse_zones.parse_zones(input_file, interfaces) #ADD
         ip_pools = parse_ip_pools.parse_ip_pools(input_file)
         virtual_ips = parse_virtual_ips.parse_virtual_ips(input_file)
         firewall_policies = parse_firewall_policies.parse_firewall_policies(input_file)

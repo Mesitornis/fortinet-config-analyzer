@@ -1,7 +1,8 @@
 import re
 
-def parse_zones(input_file):
+def parse_zones(input_file, interfaces):
     zones = []
+    interface_to_zone = {}
 
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
         lines = f.readlines()
@@ -57,14 +58,20 @@ def parse_zones(input_file):
             if current_zone and current_indentation == indentation_level + 8:
                 if stripped_line.startswith("set interface "):
                     # Extract interfaces without quotes
-                    interfaces = re.findall(r'"([^"]+)"', stripped_line[14:])
-                    if interfaces:
-                        current_zone["Membre"] = " ; ".join(interfaces)
+                    interfaces_list = re.findall(r'"([^"]+)"', stripped_line[14:])
+                    if interfaces_list:
+                        current_zone["Membre"] = ", ".join(interfaces_list)
+                        for interface in interfaces_list:
+                            interface_to_zone[interface] = current_zone["Zone"]
                     else:
-                        current_zone["Membre"] = stripped_line[14:].strip()
+                        interface_name = stripped_line[14:].strip()
+                        current_zone["Membre"] = interface_name
+                        interface_to_zone[interface_name] = current_zone["Zone"]
 
-        # Add the last zone if it hasn't been added
-        if current_zone:
-            zones.append(current_zone)
+    # Now update interfaces with zone information
+    for interface in interfaces:
+        interface_name = interface.get("Interface")
+        if interface_name in interface_to_zone:
+            interface["Zone"] = interface_to_zone[interface_name]
 
     return zones
