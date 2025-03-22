@@ -1,5 +1,7 @@
-def parse_dhcp_pools(input_file):
-    dhcp_pools = []
+import re
+
+def parse_dhcpV4_pools(input_file):
+    dhcpv4_pools = []
 
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
         lines = f.readlines()
@@ -36,7 +38,7 @@ def parse_dhcp_pools(input_file):
             if current_indentation == indentation_level + 4 and stripped_line.startswith("edit "):
                 # Début d'un nouveau bloc DHCP Pool
                 if current_dhcp_pool:
-                    dhcp_pools.append(current_dhcp_pool)
+                    dhcpv4_pools.append(current_dhcp_pool)
 
                 current_dhcp_pool = {
                     "Interface": "",
@@ -53,7 +55,7 @@ def parse_dhcp_pools(input_file):
             # Fin d'un bloc DHCP Pool
             if current_dhcp_pool and current_indentation == indentation_level + 4 and stripped_line == "next":
                 if current_dhcp_pool:
-                    dhcp_pools.append(current_dhcp_pool)
+                    dhcpv4_pools.append(current_dhcp_pool)
                 current_dhcp_pool = None
                 in_range_block = False
                 continue
@@ -90,4 +92,85 @@ def parse_dhcp_pools(input_file):
                     elif stripped_line.startswith("set dns-server"):
                         current_dhcp_pool["DNS"] = stripped_line[15:].strip()
 
-    return dhcp_pools
+    return dhcpv4_pools
+
+def parse_dhcpv6_pools(input_file):
+    dhcpv6_pools = []
+
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
+        lines = f.readlines()
+
+        dhcp6_config_started = False
+        current_pool = None
+        indentation_level = 0
+
+        # Regex to match set dns-server followed by a number
+        dns_regex = re.compile(r"^set dns-server\d* ")
+
+        for line in lines:
+            stripped_line = line.strip()
+
+            # Determine indentation level by counting spaces at the beginning of the line
+            if line.startswith(' '):
+                current_indentation = len(line) - len(line.lstrip())
+            else:
+                current_indentation = 0
+
+            # Start of DHCPv6 configuration block (first level)
+            if current_indentation == 0 and stripped_line == "config system dhcp6 server":
+                dhcp6_config_started = True
+                indentation_level = current_indentation
+                continue
+
+            # End of DHCPv6 configuration block (first level)
+            if dhcp6_config_started and current_indentation == indentation_level and stripped_line == "end":
+                dhcp6_config_started = False
+                continue
+
+            if not dhcp6_config_started:
+                continue
+
+            # Processing lines in DHCPv6 configuration block
+            if current_indentation == indentation_level + 4 and stripped_line.startswith("edit "):
+                # Beginning of a new DHCPv6 pool block
+                if current_pool:
+                    dhcpv6_pools.append(current_pool)
+
+                current_pool = {
+                    "Interface": "",
+                    "Network": "",
+                    "Start Pool": "",
+                    "End Pool": "",
+                    "DNS": ""
+                }
+                continue
+
+            # End of a DHCPv6 pool block
+            if current_pool and current_indentation == indentation_level + 4 and stripped_line == "next":
+                if current_pool:
+                    dhcpv6_pools.append(current_pool)
+                current_pool = None
+                continue
+
+            # Processing pool parameters
+            if current_pool:
+                if current_indentation == indentation_level + 8:
+                    if stripped_line.startswith("set interface "):
+                        current_pool["Interface"] = stripped_line.split()[2].strip().strip('"')
+                    elif stripped_line.startswith("set subnet "):
+                        current_pool["Network"] = stripped_line.split()[2].strip()
+
+                if current_indentation == indentation_level + 16:
+                    if stripped_line.startswith("set start-ip "):
+                        current_pool["Start Pool"] = stripped_line.split()[2].strip()
+                    elif stripped_line.startswith("set end-ip "):
+                        current_pool["End Pool"] = stripped_line.split()[2].strip()
+
+                if current_indentation == indentation_level + 8 and dns_regex.match(stripped_line):
+                    dns_server = stripped_line.split()[2].strip()
+                    if current_pool["DNS"]:
+                        current_pool["DNS"] += f" ; {dns_server}"
+                    else:
+                        current_pool["DNS"] = dns_server
+
+    return dhcpv6_pools
