@@ -10,24 +10,25 @@ def parse_interfaces(input_file):
         current_interface = None
         current_interface_data = None
         in_secondary_block = False
+        in_ipv6_block = False
         indentation_level = 0
 
         for line in lines:
             stripped_line = line.strip()
 
-            # Déterminer le niveau d'indentation en comptant les espaces au début de la ligne
+            # Determine indentation level by counting spaces at the beginning of the line
             if line.startswith(' '):
                 current_indentation = len(line) - len(line.lstrip())
             else:
                 current_indentation = 0
 
-            # Début du bloc de configuration des interfaces
+            # Start of interface configuration block
             if stripped_line == "config system interface":
                 interface_config_started = True
                 indentation_level = current_indentation
                 continue
 
-            # Fin du bloc de configuration des interfaces
+            # End of interface configuration block
             if interface_config_started and current_indentation == indentation_level and stripped_line == "end":
                 interface_config_started = False
                 continue
@@ -35,9 +36,9 @@ def parse_interfaces(input_file):
             if not interface_config_started:
                 continue
 
-            # Traitement des lignes dans le bloc de configuration des interfaces
+            # Processing lines in the interface configuration block
             if current_indentation == indentation_level + 4 and stripped_line.startswith("edit "):
-                # Début d'un nouveau bloc d'interface
+                # Beginning of a new interface block
                 if current_interface_data:
                     interfaces.append(current_interface_data)
 
@@ -46,12 +47,14 @@ def parse_interfaces(input_file):
                 current_interface_data = {
                     "Interface": interface_name,
                     "Vdom": "",
-                    "Adresse IP": "",
+                    "Adresse IPv4": "",
                     "NetMask": "",
+                    "Adresse IPv6": "",
                     "Distance Administrative": "", 
                     "VLAN ID": "",
                     "Ip Secondaire": "",
-                    "Accès": "",
+                    "Accès IPv4": "",
+                    "Accès IPv6": "",
                     "Mode": "", 
                     "Rôle": "",
                     "Type": "",
@@ -60,30 +63,42 @@ def parse_interfaces(input_file):
                     "Commentaire": ""
                 }
                 in_secondary_block = False
+                in_ipv6_block = False
                 continue
 
-            # Fin d'un bloc d'interface
+            # End of an interface block
             if current_interface and current_indentation == indentation_level + 4 and stripped_line == "next":
                 if current_interface_data:
                     interfaces.append(current_interface_data)
                 current_interface = None
                 current_interface_data = None
                 in_secondary_block = False
+                in_ipv6_block = False
                 continue
 
-            # Traitement des paramètres de l'interface
+            # Processing interface parameters
             if current_interface and current_interface_data:
-                # Début du bloc secondaryip
+                # Start of secondary IP block
                 if current_indentation == indentation_level + 8 and stripped_line == "config secondaryip":
                     in_secondary_block = True
                     continue
 
-                # Fin du bloc secondaryip
+                # End of secondary IP block
                 if in_secondary_block and current_indentation == indentation_level + 8 and stripped_line == "end":
                     in_secondary_block = False
                     continue
 
-                # Extraction des IP secondaires
+                # Start of IPv6 block
+                if current_indentation == indentation_level + 8 and stripped_line == "config ipv6":
+                    in_ipv6_block = True
+                    continue
+
+                # End of IPv6 block
+                if in_ipv6_block and current_indentation == indentation_level + 8 and stripped_line == "end":
+                    in_ipv6_block = False
+                    continue
+
+                # Extraction of secondary IPs
                 if in_secondary_block and current_indentation == indentation_level + 16 and stripped_line.startswith("set ip "):
                     parts = stripped_line[7:].split()
                     if len(parts) >= 2:
@@ -95,32 +110,48 @@ def parse_interfaces(input_file):
                             current_interface_data["Ip Secondaire"] = f"{ip} {mask}"
                     continue
 
-                # Paramètres standard de l'interface (non dans le bloc secondaryip)
-                if not in_secondary_block and current_indentation == indentation_level + 8:
+                # Extraction of IPv6 information
+                if in_ipv6_block and current_indentation == indentation_level + 12:
+                    if stripped_line.startswith("set ip6-address "):
+                        ipv6_address = stripped_line[15:].strip()
+                        if current_interface_data["Adresse IPv6"]:
+                            current_interface_data["Adresse IPv6"] += f" ; {ipv6_address}"
+                        else:
+                            current_interface_data["Adresse IPv6"] = ipv6_address
+                    elif stripped_line.startswith("set ip6-allowaccess "):
+                        ipv6_access = stripped_line[19:].strip()
+                        if current_interface_data["Accès IPv6"]:
+                            current_interface_data["Accès IPv6"] += f" ; {ipv6_access}"
+                        else:
+                            current_interface_data["Accès IPv6"] = ipv6_access
+                    continue
+
+                # Standard interface parameters (not in secondaryip or ipv6 block)
+                if not in_secondary_block and not in_ipv6_block and current_indentation == indentation_level + 8:
                     if stripped_line.startswith("set vdom "):
                         current_interface_data["Vdom"] = stripped_line[9:].strip().strip('"')
                     elif stripped_line.startswith("set ip "):
                         parts = stripped_line[7:].split()
                         if len(parts) >= 2:
-                            current_interface_data["Adresse IP"] = parts[0]
+                            current_interface_data["Adresse IPv4"] = parts[0]
                             current_interface_data["NetMask"] = parts[1]
                     elif stripped_line.startswith("set distance"):
                         current_interface_data["Distance Administrative"] = stripped_line[12:].strip().strip('"')
                     elif stripped_line.startswith("set vlanid "):
                         current_interface_data["VLAN ID"] = stripped_line[11:].strip()
-                        # Si un VLAN ID est défini, définir automatiquement le type sur "Vlan"
+                        # If a VLAN ID is defined, automatically set the type to "Vlan"
                         current_interface_data["Type"] = "Vlan"
                     elif stripped_line.startswith("set allowaccess "):
-                        current_interface_data["Accès"] = stripped_line[15:].strip()
+                        current_interface_data["Accès IPv4"] = stripped_line[15:].strip()
                     elif stripped_line.startswith("set mode"): 
                         current_interface_data["Mode"] = stripped_line[9:].strip().strip('"') 
                     elif stripped_line.startswith("set role "):
                         current_interface_data["Rôle"] = stripped_line[9:].strip()
                     elif stripped_line.startswith("set type ") and not current_interface_data["VLAN ID"]:
-                        # Ne définir le type que s'il n'y a pas déjà un VLAN ID (qui aurait défini le type sur "Vlan")
+                        # Only set the type if there is not already a VLAN ID (which would have set the type to "Vlan")
                         current_interface_data["Type"] = stripped_line[9:].strip()
                     elif stripped_line.startswith("set member "):
-                        # Extraire les membres sans les guillemets
+                        # Extract members without quotes
                         members = re.findall(r'"([^"]+)"', stripped_line[11:])
                         if members:
                             current_interface_data["Membre"] = " ; ".join(members)
@@ -130,14 +161,14 @@ def parse_interfaces(input_file):
                         current_interface_data["Commentaire"] = stripped_line[10:].strip().strip('"')
                     elif stripped_line.startswith("set interface "):
                         parent_interface = stripped_line[13:].strip().strip('"')
-                        # Stocker temporairement l'interface parente pour associer le tag VLAN
+                        # Temporarily store the parent interface to associate VLAN tag
                         current_interface_data["_parent_interface"] = parent_interface
 
-        # Ajouter le dernier interface s'il n'a pas été ajouté
+        # Add the last interface if it hasn't been added
         if current_interface_data:
             interfaces.append(current_interface_data)
 
-        # Associer les tags VLAN aux interfaces parentes
+        # Associate VLAN tags with parent interfaces
         for interface in interfaces:
             if interface.get("VLAN ID") and interface.get("_parent_interface"):
                 parent_name = interface.get("_parent_interface")
@@ -150,7 +181,7 @@ def parse_interfaces(input_file):
                             parent["Tag"] = vlan_id
                         break
 
-            # Nettoyer la propriété temporaire
+            # Clean up the temporary property
             if "_parent_interface" in interface:
                 del interface["_parent_interface"]
 

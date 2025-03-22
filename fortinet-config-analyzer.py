@@ -39,9 +39,11 @@ def create_excel_report(system_info, interfaces, dhcp_pools, hosts, address_grou
     # Create Interfaces tab
     ws_interfaces = wb.create_sheet(title="Interfaces")
 
-    # Create headers
-    interface_headers = ["Interface", "Vdom", "Adresse IP", "NetMask", "Distance Administrative", "VLAN ID", "Ip Secondaire", 
-                       "Accès", "Zone", "Mode", "Rôle", "Type", "Membre", "Tag", "Commentaire"] #ADD
+    # Create headers, now including IPv6 columns
+    interface_headers = [
+        "Interface", "Vdom", "Adresse IPv4", "NetMask", "Adresse IPv6", "VLAN ID", "Ip Secondaire",
+        "Accès IPv4", "Accès IPv6", "Zone", "Rôle", "Type", "Membre", "Tag", "Commentaire"
+    ]
 
     for col, header in enumerate(interface_headers, 1):
         cell = ws_interfaces.cell(row=1, column=col)
