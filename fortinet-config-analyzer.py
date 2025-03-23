@@ -588,7 +588,7 @@ def main():
         print("Analyse du fichier en cours...")
         system_info = parse_system_info.parse_system_info(input_file)
         interfaces = parse_interfaces.parse_interfaces(input_file)
-        dhcpv4_pools = parse_dhcp_pools.parse_dhcpV4_pools(input_file)
+        dhcpv4_pools = parse_dhcp_pools.parse_dhcpv4_pools(input_file)
         dhcpv6_pools = parse_dhcp_pools.parse_dhcpv6_pools(input_file)
         hostsv4 = parse_hosts.parse_hostsv4(input_file)
         address_groups = parse_address_groups.parse_address_groups(input_file)

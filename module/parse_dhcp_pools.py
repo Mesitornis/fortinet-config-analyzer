@@ -1,6 +1,6 @@
 import re
 
-def parse_dhcpV4_pools(input_file):
+def parse_dhcpv4_pools(input_file):
     dhcpv4_pools = []
 
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
