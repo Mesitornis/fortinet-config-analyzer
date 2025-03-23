@@ -1,5 +1,5 @@
-def parse_hosts(input_file):
-    hosts = []
+def parse_hostsv4(input_file):
+    hostsv4 = []
 
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
         lines = f.readlines()
@@ -35,14 +35,14 @@ def parse_hosts(input_file):
             if current_indentation == indentation_level + 4 and stripped_line.startswith("edit "):
                 # Beginning of a new host block
                 if current_host:
-                    hosts.append(current_host)
+                    hostsv4.append(current_host)
 
                 hostname = stripped_line[5:].strip().strip('"')
                 current_host = {
                     "Hostname": hostname,
                     "UUID": "",
                     "Interface": "",
-                    "Type": "",
+                    "Type": "ip",
                     "MAC": "",
                     "Adresse": "",
                     "NetMask": "",
@@ -56,7 +56,7 @@ def parse_hosts(input_file):
             # End of a host block
             if current_host and current_indentation == indentation_level + 4 and stripped_line == "next":
                 if current_host:
-                    hosts.append(current_host)
+                    hostsv4.append(current_host)
                 current_host = None
                 continue
 
@@ -90,6 +90,6 @@ def parse_hosts(input_file):
 
         # Add the last host if it hasn't been added
         if current_host:
-            hosts.append(current_host)
+            hostsv4.append(current_host)
 
-    return hosts
+    return hostsv4

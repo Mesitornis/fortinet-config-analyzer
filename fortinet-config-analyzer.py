@@ -5,11 +5,11 @@ from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from module import parse_zones, parse_user_groups, parse_users, parse_address_groups, parse_hosts, parse_dhcp_pools, parse_interfaces, parse_system_info, parse_ip_pools, parse_virtual_ips, parse_firewall_policies, parse_routes, parse_route_policies, parse_ipsec
 
-def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hosts, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_configs, input_file):
+def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_configs, input_file):
     # Create Excel file
     wb = openpyxl.Workbook()
 
-    # Create System tab
+    ### Create System tab
     ws_system = wb.active
     ws_system.title = "Systèmes"
 
@@ -36,7 +36,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
         adjusted_width = (max_length + 2)
         ws_system.column_dimensions[column].width = adjusted_width
 
-    # Create Interfaces tab
+    ### Create Interfaces tab
     ws_interfaces = wb.create_sheet(title="Interfaces")
 
     # Create headers, now including IPv6 columns
@@ -79,14 +79,14 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter = openpyxl.utils.get_column_letter(len(interface_headers))
     ws_interfaces.auto_filter.ref = f"A1:{last_col_letter}{len(interfaces) + 1}"
 
-    # Create DHCP Pool tab
-    ws_dhcp = wb.create_sheet(title="DHCP Pool IPv4")
+    ### Create DHCPV4 Pool tab
+    ws_dhcpv4 = wb.create_sheet(title="DHCP Pool IPv4")
 
     # Create headers for DHCP Pool tab
-    dhcp_headers = ["Interface", "Domaine", "Gateway", "NetMask", "Start Pool", "End Pool", "DNS"]
+    dhcpv4_headers = ["Interface", "Domaine", "Gateway", "NetMask", "Start Pool", "End Pool", "DNS"]
 
-    for col, header in enumerate(dhcp_headers, 1):
-        cell = ws_dhcp.cell(row=1, column=col)
+    for col, header in enumerate(dhcpv4_headers, 1):
+        cell = ws_dhcpv4.cell(row=1, column=col)
         cell.value = header
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal='center')
@@ -95,27 +95,28 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     # Fill DHCP Pool data with alternating row colors
     for row, pool in enumerate(dhcpv4_pools, 2):
         if row % 2 == 0:  # Even rows
-            for col in range(1, len(dhcp_headers) + 1):
-                ws_dhcp.cell(row=row, column=col).fill = light_fill
+            for col in range(1, len(dhcpv4_headers) + 1):
+                ws_dhcpv4.cell(row=row, column=col).fill = light_fill
 
         # Fill data
-        for col, header in enumerate(dhcp_headers, 1):
-            ws_dhcp.cell(row=row, column=col).value = pool.get(header, "")
+        for col, header in enumerate(dhcpv4_headers, 1):
+            ws_dhcpv4.cell(row=row, column=col).value = pool.get(header, "")
 
     # Adjust column width for DHCP Pool tab
-    for col in ws_dhcp.columns:
+    for col in ws_dhcpv4.columns:
         max_length = 0
         column = col[0].column_letter
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
         adjusted_width = (max_length + 2)
-        ws_dhcp.column_dimensions[column].width = adjusted_width
+        ws_dhcpv4.column_dimensions[column].width = adjusted_width
 
     # Add filters to DHCP Pool tab headers
-    last_col_letter_dhcp = openpyxl.utils.get_column_letter(len(dhcp_headers))
-    ws_dhcp.auto_filter.ref = f"A1:{last_col_letter_dhcp}{len(dhcpv4_pools) + 1}"
+    last_col_letter_dhcp = openpyxl.utils.get_column_letter(len(dhcpv4_headers))
+    ws_dhcpv4.auto_filter.ref = f"A1:{last_col_letter_dhcp}{len(dhcpv4_pools) + 1}"
 
+    ### Create DHCPV6 Pool tab
     ws_dhcpv6 = wb.create_sheet(title="DHCP Pool IPv6")
 
     # Create headers for DHCP Pool IPv6 tab
@@ -154,44 +155,44 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_dhcpv6 = openpyxl.utils.get_column_letter(len(dhcpv6_headers))
     ws_dhcpv6.auto_filter.ref = f"A1:{last_col_letter_dhcpv6}{len(dhcpv6_pools) + 1}"
 
-    # Create Host tab
-    ws_hosts = wb.create_sheet(title="Host")
+    ### Create Host tab
+    ws_hostsv4 = wb.create_sheet(title="Host IPv4")
 
     # Create headers for Host tab
-    host_headers = ["Hostname", "UUID", "Interface", "Type", "MAC", "Adresse", "NetMask", "FQDN", "Start IP", "End IP", "Commentaire"]
+    hostv4_headers = ["Hostname", "UUID", "Interface", "Type", "MAC", "Adresse", "NetMask", "FQDN", "Start IP", "End IP", "Commentaire"]
 
-    for col, header in enumerate(host_headers, 1):
-        cell = ws_hosts.cell(row=1, column=col)
+    for col, header in enumerate(hostv4_headers, 1):
+        cell = ws_hostsv4.cell(row=1, column=col)
         cell.value = header
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal='center')
         cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
 
     # Fill Host data with alternating row colors
-    for row, host in enumerate(hosts, 2):
+    for row, host in enumerate(hostsv4, 2):
         if row % 2 == 0:  # Even rows
-            for col in range(1, len(host_headers) + 1):
-                ws_hosts.cell(row=row, column=col).fill = light_fill
+            for col in range(1, len(hostv4_headers) + 1):
+                ws_hostsv4.cell(row=row, column=col).fill = light_fill
 
         # Fill data
-        for col, header in enumerate(host_headers, 1):
-            ws_hosts.cell(row=row, column=col).value = host.get(header, "")
+        for col, header in enumerate(hostv4_headers, 1):
+            ws_hostsv4.cell(row=row, column=col).value = host.get(header, "")
 
     # Adjust column width for Host tab
-    for col in ws_hosts.columns:
+    for col in ws_hostsv4.columns:
         max_length = 0
         column = col[0].column_letter
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
         adjusted_width = (max_length + 2)
-        ws_hosts.column_dimensions[column].width = adjusted_width
+        ws_hostsv4.column_dimensions[column].width = adjusted_width
 
     # Add filters to Host tab headers
-    last_col_letter_host = openpyxl.utils.get_column_letter(len(host_headers))
-    ws_hosts.auto_filter.ref = f"A1:{last_col_letter_host}{len(hosts) + 1}"
+    last_col_letter_host = openpyxl.utils.get_column_letter(len(hostv4_headers))
+    ws_hostsv4.auto_filter.ref = f"A1:{last_col_letter_host}{len(hostsv4) + 1}"
 
-    # Create Host Groupe tab
+    ### Create Host Groupe tab
     ws_host_groupe = wb.create_sheet(title="Host Groupe")
 
     # Create headers for Host Groupe tab
@@ -228,7 +229,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_groupe = openpyxl.utils.get_column_letter(len(host_groupe_headers))
     ws_host_groupe.auto_filter.ref = f"A1:{last_col_letter_groupe}{len(address_groups) + 1}"
 
-    # Create User tab
+    ### Create User tab
     ws_users = wb.create_sheet(title="User")
 
     # Create headers for User tab
@@ -265,7 +266,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_user = openpyxl.utils.get_column_letter(len(user_headers))
     ws_users.auto_filter.ref = f"A1:{last_col_letter_user}{len(users) + 1}"
 
-    # Create Groupe tab
+    ### Create Groupe tab
     ws_groups = wb.create_sheet(title="Groupe")
 
     # Create headers for Groupe tab
@@ -302,7 +303,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_group = openpyxl.utils.get_column_letter(len(group_headers))
     ws_groups.auto_filter.ref = f"A1:{last_col_letter_group}{len(user_groups) + 1}"
 
-    # Create Zone tab
+    ### Create Zone tab
     ws_zones = wb.create_sheet(title="Zone")
 
     # Create headers for Zone tab
@@ -339,7 +340,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_zone = openpyxl.utils.get_column_letter(len(zone_headers))
     ws_zones.auto_filter.ref = f"A1:{last_col_letter_zone}{len(zones) + 1}"
 
-    # Create Ip Pool tab
+    ### Create Ip Pool tab
     ws_ip_pools = wb.create_sheet(title="Ip Pool")
 
     # Create headers for Ip Pool tab
@@ -376,7 +377,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_ip_pool = openpyxl.utils.get_column_letter(len(ip_pool_headers))
     ws_ip_pools.auto_filter.ref = f"A1:{last_col_letter_ip_pool}{len(ip_pools) + 1}"
 
-    # Create Virtual IP tab
+    ### Create Virtual IP tab
     ws_virtual_ips = wb.create_sheet(title="Virtual IP")
 
     # Create headers for Virtual IP tab
@@ -413,7 +414,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_vip = openpyxl.utils.get_column_letter(len(vip_headers))
     ws_virtual_ips.auto_filter.ref = f"A1:{last_col_letter_vip}{len(virtual_ips) + 1}"
 
-    # Create Règle tab
+    ### Create Règle tab
     ws_regles = wb.create_sheet(title="Règle")
 
     # Create headers for Règle tab
@@ -451,7 +452,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_regle = openpyxl.utils.get_column_letter(len(regle_headers))
     ws_regles.auto_filter.ref = f"A1:{last_col_letter_regle}{len(firewall_policies) + 1}"
 
-    # Create Route tab
+    ### Create Route tab
     ws_routes = wb.create_sheet(title="Route")
 
     # Create headers for Route tab
@@ -488,7 +489,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_route = openpyxl.utils.get_column_letter(len(route_headers))
     ws_routes.auto_filter.ref = f"A1:{last_col_letter_route}{len(routes) + 1}"
 
-    # Create Route Policy tab
+    ### Create Route Policy tab
     ws_route_policies = wb.create_sheet(title="Route Policy")
 
     # Create headers for Route Policy tab
@@ -526,7 +527,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_route_policy = openpyxl.utils.get_column_letter(len(route_policy_headers))
     ws_route_policies.auto_filter.ref = f"A1:{last_col_letter_route_policy}{len(route_policies) + 1}"
 
-    # Create IPSEC tab
+    ### Create IPSEC tab
     ws_ipsec = wb.create_sheet(title="IPSEC")
 
     # Create headers for IPSEC tab
@@ -589,7 +590,7 @@ def main():
         interfaces = parse_interfaces.parse_interfaces(input_file)
         dhcpv4_pools = parse_dhcp_pools.parse_dhcpV4_pools(input_file)
         dhcpv6_pools = parse_dhcp_pools.parse_dhcpv6_pools(input_file)
-        hosts = parse_hosts.parse_hosts(input_file)
+        hostsv4 = parse_hosts.parse_hostsv4(input_file)
         address_groups = parse_address_groups.parse_address_groups(input_file)
         users = parse_users.parse_users(input_file)
         user_groups = parse_user_groups.parse_user_groups(input_file)
@@ -604,7 +605,7 @@ def main():
 
         # Create Excel report
         print("Création du rapport Excel...")
-        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hosts, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_phase1_configs, input_file)
+        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_phase1_configs, input_file)
 
         print(f"Rapport Excel créé avec succès: {output_file}")
 
