@@ -42,7 +42,7 @@ def parse_hostsv4(input_file):
                     "Hostname": hostname,
                     "UUID": "",
                     "Interface": "",
-                    "Type": "ip",
+                    "Type": "",
                     "MAC": "",
                     "Adresse": "",
                     "NetMask": "",
@@ -91,6 +91,77 @@ def parse_hostsv4(input_file):
         # Add the last host if it hasn't been added
         if current_host:
             hostsv4.append(current_host)
+
+    return hostsv4
+
+def update_hostsv4_with_dhcp(input_file, hostsv4):
+    reserved_mac_to_ip = {}
+
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
+        lines = f.readlines()
+
+        dhcp_config_started = False
+        current_reservation = None
+        reservation_ip = None
+        indentation_level = 0
+
+        for line in lines:
+            stripped_line = line.strip()
+
+            # Determine indentation level by counting spaces at the beginning of the line
+            if line.startswith(' '):
+                current_indentation = len(line) - len(line.lstrip())
+            else:
+                current_indentation = 0
+
+            # Start of DHCP configuration block (first level)
+            if current_indentation == 0 and stripped_line == "config system dhcp server":
+                dhcp_config_started = True
+                indentation_level = current_indentation
+                print("Starting DHCP block...")
+                continue
+
+            # End of DHCP configuration block (first level)
+            if dhcp_config_started and current_indentation == indentation_level and stripped_line == "end":
+                dhcp_config_started = False
+                print("Ending DHCP block...")
+                continue
+
+            if not dhcp_config_started:
+                continue
+
+            # Start of reserved-address block (third level)
+            if current_indentation == indentation_level + 8 and stripped_line.startswith("edit "):
+                current_reservation = None
+                reservation_ip = None
+                print(f"Starting reserved-address block for reservation {stripped_line}")
+                continue
+
+            # End of reserved-address block (third level)
+            if current_reservation is not None and current_indentation == indentation_level + 12 and stripped_line == "next": #8 to 12
+                if current_reservation and reservation_ip:
+                    reserved_mac_to_ip[current_reservation] = reservation_ip
+                    print(f"Reserved MAC {current_reservation} with IP {reservation_ip}")
+                current_reservation = None
+                reservation_ip = None
+                continue
+
+            # Processing reserved-address parameters (fourth level)
+            if current_indentation == indentation_level + 16:
+                if stripped_line.startswith("set mac "):
+                    current_reservation = stripped_line.split()[2].strip().strip('"')
+                    print(f"Found MAC: {current_reservation}")
+                elif stripped_line.startswith("set ip "):
+                    reservation_ip = stripped_line.split()[2].strip()
+                    print(f"Found IP: {reservation_ip}")
+
+    # Update the hostsv4 with the reserved IP based on MAC
+    for host in hostsv4:
+        if host.get("Type") == "mac":
+            mac_address = host.get("MAC", "").strip()
+            if mac_address in reserved_mac_to_ip:
+                host["Adresse"] = reserved_mac_to_ip[mac_address]
+                print(f"Updated host {host['Hostname']} with IP {host['Adresse']}")
 
     return hostsv4
 

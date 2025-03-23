@@ -630,6 +630,7 @@ def main():
         dhcpv4_pools = parse_dhcp_pools.parse_dhcpv4_pools(input_file)
         dhcpv6_pools = parse_dhcp_pools.parse_dhcpv6_pools(input_file)
         hostsv4 = parse_hosts.parse_hostsv4(input_file)
+        hostsv4 = parse_hosts.update_hostsv4_with_dhcp(input_file, hostsv4)
         hostsv6 = parse_hosts.parse_hostsv6(input_file)
         address_groups = parse_address_groups.parse_address_groups(input_file)
         users = parse_users.parse_users(input_file)
