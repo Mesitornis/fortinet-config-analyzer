@@ -5,7 +5,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from module import parse_zones, parse_user_groups, parse_users, parse_address_groups, parse_hosts, parse_dhcp_pools, parse_interfaces, parse_system_info, parse_ip_pools, parse_virtual_ips, parse_firewall_policies, parse_routes, parse_route_policies, parse_ipsec
 
-def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_configs, input_file):
+def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_configs, input_file):
     # Create Excel file
     wb = openpyxl.Workbook()
 
@@ -191,6 +191,45 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     # Add filters to Host tab headers
     last_col_letter_host = openpyxl.utils.get_column_letter(len(hostv4_headers))
     ws_hostsv4.auto_filter.ref = f"A1:{last_col_letter_host}{len(hostsv4) + 1}"
+
+    ### Create Host IPv6 tab
+    ws_hostsv6 = wb.create_sheet(title="Host IPv6")
+
+    # Create headers for Host IPv6 tab
+    hostsv6_headers = ["Hostname", "UUID", "Adresse IPv6"]
+
+    for col, header in enumerate(hostsv6_headers, 1):
+        cell = ws_hostsv6.cell(row=1, column=col)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+        cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+
+    # Fill Host IPv6 data with alternating row colors
+    light_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+    for row, host in enumerate(hostsv6, 2):
+        if row % 2 == 0:  # Even rows
+            for col in range(1, len(hostsv6_headers) + 1):
+                ws_hostsv6.cell(row=row, column=col).fill = light_fill
+
+        # Fill data
+        for col, header in enumerate(hostsv6_headers, 1):
+            ws_hostsv6.cell(row=row, column=col).value = host.get(header, "")
+
+    # Adjust column width for Host IPv6 tab
+    for col in ws_hostsv6.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        adjusted_width = (max_length + 2)
+        ws_hostsv6.column_dimensions[column].width = adjusted_width
+
+    # Add filters to Host IPv6 tab headers
+    last_col_letter_hostsv6 = openpyxl.utils.get_column_letter(len(hostsv6_headers))
+    ws_hostsv6.auto_filter.ref = f"A1:{last_col_letter_hostsv6}{len(hostsv6) + 1}"
 
     ### Create Host Groupe tab
     ws_host_groupe = wb.create_sheet(title="Host Groupe")
@@ -591,6 +630,7 @@ def main():
         dhcpv4_pools = parse_dhcp_pools.parse_dhcpv4_pools(input_file)
         dhcpv6_pools = parse_dhcp_pools.parse_dhcpv6_pools(input_file)
         hostsv4 = parse_hosts.parse_hostsv4(input_file)
+        hostsv6 = parse_hosts.parse_hostsv6(input_file)
         address_groups = parse_address_groups.parse_address_groups(input_file)
         users = parse_users.parse_users(input_file)
         user_groups = parse_user_groups.parse_user_groups(input_file)
@@ -605,7 +645,7 @@ def main():
 
         # Create Excel report
         print("Création du rapport Excel...")
-        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_phase1_configs, input_file)
+        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_phase1_configs, input_file)
 
         print(f"Rapport Excel créé avec succès: {output_file}")
 

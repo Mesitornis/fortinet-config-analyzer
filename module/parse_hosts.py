@@ -93,3 +93,66 @@ def parse_hostsv4(input_file):
             hostsv4.append(current_host)
 
     return hostsv4
+
+def parse_hostsv6(input_file):
+    hostv6 = []
+
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
+        lines = f.readlines()
+
+        host_ipv6_config_started = False
+        current_host = None
+        indentation_level = 0
+
+        for line in lines:
+            stripped_line = line.strip()
+
+            # Déterminer le niveau d'indentation en comptant les espaces au début de la ligne
+            if line.startswith(' '):
+                current_indentation = len(line) - len(line.lstrip())
+            else:
+                current_indentation = 0
+
+            # Début du bloc de configuration des adresses IPv6 (premier niveau)
+            if current_indentation == 0 and stripped_line == "config firewall address6":
+                host_ipv6_config_started = True
+                indentation_level = current_indentation
+                continue
+
+            # Fin du bloc de configuration des adresses IPv6 (premier niveau)
+            if host_ipv6_config_started and current_indentation == indentation_level and stripped_line == "end":
+                host_ipv6_config_started = False
+                continue
+
+            if not host_ipv6_config_started:
+                continue
+
+            # Traitement des lignes dans le bloc de configuration des adresses IPv6
+            if current_indentation == indentation_level + 4 and stripped_line.startswith("edit "):
+                # Début d'un nouveau bloc d'adresse IPv6
+                if current_host:
+                    hostv6.append(current_host)
+
+                hostname = stripped_line[5:].strip().strip('"')
+                current_host = {
+                    "Hostname": hostname,
+                    "UUID": "",
+                    "Adresse IPv6": ""
+                }
+                continue
+
+            # Fin d'un bloc d'adresse IPv6
+            if current_host and current_indentation == indentation_level + 4 and stripped_line == "next":
+                if current_host:
+                    hostv6.append(current_host)
+                current_host = None
+                continue
+
+            # Traitement des paramètres de l'adresse IPv6
+            if current_host and current_indentation == indentation_level + 8:
+                if stripped_line.startswith("set uuid "):
+                    current_host["UUID"] = stripped_line[9:].strip()
+                elif stripped_line.startswith("set ip6 "):
+                    current_host["Adresse IPv6"] = stripped_line[8:].strip()
+
+    return hostv6
