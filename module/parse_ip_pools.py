@@ -45,7 +45,7 @@ def parse_ip_pools(input_file):
                     "End IP": "",
                     "Source Start IP": "",
                     "Source End IP": "",
-                    "ARP": ""
+                    "ARP": "enable"
                 }
                 continue
 

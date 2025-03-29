@@ -420,7 +420,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     ws_virtual_ips = wb.create_sheet(title="Virtual IP")
 
     # Create headers for Virtual IP tab
-    vip_headers = ["Name", "UUID", "External IP", "Map IP", "External Port", "Map Port", "External Interface", "Port Forward"]
+    vip_headers = ["Name", "UUID", "External IP", "Map IP", "External Port", "Map Port", "Protocole", "External Interface", "Port Forward"]
 
     for col, header in enumerate(vip_headers, 1):
         cell = ws_virtual_ips.cell(row=1, column=col)

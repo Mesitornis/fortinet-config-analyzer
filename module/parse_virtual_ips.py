@@ -45,8 +45,9 @@ def parse_virtual_ips(input_file):
                     "Map IP": "",
                     "External Port": "",
                     "Map Port": "",
+                    "Protocole":"",
                     "External Interface": "",
-                    "Port Forward": ""
+                    "Port Forward": "disable"
                 }
                 continue
 
@@ -69,6 +70,10 @@ def parse_virtual_ips(input_file):
                     current_vip["External Port"] = stripped_line[11:].strip()
                 elif stripped_line.startswith("set mappedport "):
                     current_vip["Map Port"] = stripped_line[14:].strip()
+                
+                elif stripped_line.startswith("set protocol "):
+                    current_vip["Protocole"] = stripped_line[12:].strip()
+
                 elif stripped_line.startswith("set extintf "):
                     current_vip["External Interface"] = stripped_line[11:].strip().strip('"')
                 elif stripped_line.startswith("set portforward "):

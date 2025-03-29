@@ -67,8 +67,8 @@ def parse_routes(input_file):
                     current_route["Priorité"] = stripped_line[13:].strip()
                 elif stripped_line.startswith("set distance "):
                     current_route["Distance Administrative"] = stripped_line[13:].strip()
-                elif stripped_line.startswith("set blackhole "):#
-                    current_route["Blackhole"] = stripped_line[13:].strip()#
+                elif stripped_line.startswith("set blackhole "):
+                    current_route["Blackhole"] = stripped_line[13:].strip()
                 elif stripped_line.startswith("set comment "):
                     current_route["Commentaire"] = stripped_line[12:].strip().strip('"')
 
