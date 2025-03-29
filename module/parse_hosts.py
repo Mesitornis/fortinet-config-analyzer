@@ -1,3 +1,5 @@
+import ipaddress
+
 def parse_hostsv4(input_file):
     hostsv4 = []
 
@@ -118,13 +120,11 @@ def update_hostsv4_with_dhcp(input_file, hostsv4):
             if current_indentation == 0 and stripped_line == "config system dhcp server":
                 dhcp_config_started = True
                 indentation_level = current_indentation
-                print("Starting DHCP block...")
                 continue
 
             # End of DHCP configuration block (first level)
             if dhcp_config_started and current_indentation == indentation_level and stripped_line == "end":
                 dhcp_config_started = False
-                print("Ending DHCP block...")
                 continue
 
             if not dhcp_config_started:
@@ -134,14 +134,12 @@ def update_hostsv4_with_dhcp(input_file, hostsv4):
             if current_indentation == indentation_level + 8 and stripped_line.startswith("edit "):
                 current_reservation = None
                 reservation_ip = None
-                print(f"Starting reserved-address block for reservation {stripped_line}")
                 continue
 
             # End of reserved-address block (third level)
             if current_reservation is not None and current_indentation == indentation_level + 12 and stripped_line == "next": #8 to 12
                 if current_reservation and reservation_ip:
                     reserved_mac_to_ip[current_reservation] = reservation_ip
-                    print(f"Reserved MAC {current_reservation} with IP {reservation_ip}")
                 current_reservation = None
                 reservation_ip = None
                 continue
@@ -150,10 +148,8 @@ def update_hostsv4_with_dhcp(input_file, hostsv4):
             if current_indentation == indentation_level + 16:
                 if stripped_line.startswith("set mac "):
                     current_reservation = stripped_line.split()[2].strip().strip('"')
-                    print(f"Found MAC: {current_reservation}")
                 elif stripped_line.startswith("set ip "):
                     reservation_ip = stripped_line.split()[2].strip()
-                    print(f"Found IP: {reservation_ip}")
 
     # Update the hostsv4 with the reserved IP based on MAC
     for host in hostsv4:
@@ -161,7 +157,32 @@ def update_hostsv4_with_dhcp(input_file, hostsv4):
             mac_address = host.get("MAC", "").strip()
             if mac_address in reserved_mac_to_ip:
                 host["Adresse"] = reserved_mac_to_ip[mac_address]
-                print(f"Updated host {host['Hostname']} with IP {host['Adresse']}")
+
+    return hostsv4
+
+def calculate_ip_range(ip, netmask):
+    # Créer un objet réseau IP
+    network = ipaddress.ip_network(f"{ip}/{netmask}", strict=False)
+    # Calculer la première et la dernière IP utilisable
+    first_ip = network.network_address + 1
+    last_ip = network.broadcast_address - 1
+    return str(first_ip), str(last_ip)
+
+def update_hostsv4_with_ip_range(hostsv4):
+    for host in hostsv4:
+        ip_address = host.get("Adresse", "")
+        netmask = host.get("NetMask", "")
+        # Vérifier si le NetMask est "255.255.255.255"
+        if netmask == "255.255.255.255":
+            continue
+        if ip_address and netmask:
+            try:
+                # Calculer la plage IP
+                start_ip, end_ip = calculate_ip_range(ip_address, netmask)
+                host["Start IP"] = start_ip
+                host["End IP"] = end_ip
+            except ValueError as e:
+                print(f"Error calculating IP range for host {host['Hostname']}: {e}")
 
     return hostsv4
 
