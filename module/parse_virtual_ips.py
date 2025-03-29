@@ -45,7 +45,7 @@ def parse_virtual_ips(input_file):
                     "Map IP": "",
                     "External Port": "",
                     "Map Port": "",
-                    "Protocole":"",
+                    "Protocole":"tcp",
                     "External Interface": "",
                     "Port Forward": "disable"
                 }
