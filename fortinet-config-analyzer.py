@@ -5,7 +5,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from module import parse_zones, parse_user_groups, parse_users, parse_address_groups, parse_hosts, parse_dhcp_pools, parse_interfaces, parse_system_info, parse_ip_pools, parse_virtual_ips, parse_firewall_policies, parse_routes, parse_route_policies, parse_ipsec
 
-def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_configs, input_file):
+def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies_v4, firewall_policies_v6, routes, route_policies, ipsec_configs, input_file):
     # Create Excel file
     wb = openpyxl.Workbook()
 
@@ -453,8 +453,8 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     last_col_letter_vip = openpyxl.utils.get_column_letter(len(vip_headers))
     ws_virtual_ips.auto_filter.ref = f"A1:{last_col_letter_vip}{len(virtual_ips) + 1}"
 
-    ### Create Règle tab
-    ws_regles = wb.create_sheet(title="Règle")
+    ### Create Règle tab v4
+    ws_regles = wb.create_sheet(title="Règle IPv4")
 
     # Create headers for Règle tab
     regle_headers = ["Name", "UUID", "Source Interface", "Destination Interface", "Source Adresse", "Destination Adresse",
@@ -468,7 +468,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
         cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
 
     # Fill Règle data with alternating row colors
-    for row, regle in enumerate(firewall_policies, 2):
+    for row, regle in enumerate(firewall_policies_v4, 2):
         if row % 2 == 0:  # Even rows
             for col in range(1, len(regle_headers) + 1):
                 ws_regles.cell(row=row, column=col).fill = light_fill
@@ -489,7 +489,45 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
 
     # Add filters to Règle tab headers
     last_col_letter_regle = openpyxl.utils.get_column_letter(len(regle_headers))
-    ws_regles.auto_filter.ref = f"A1:{last_col_letter_regle}{len(firewall_policies) + 1}"
+    ws_regles.auto_filter.ref = f"A1:{last_col_letter_regle}{len(firewall_policies_v4) + 1}"
+
+    ### Create Règle tab v6
+    ws_regles = wb.create_sheet(title="Règle IPv6")
+
+    # Create headers for Règle tab
+    regle_headers = ["Name", "UUID", "Source Interface", "Destination Interface", "Source Adresse", "Destination Adresse",
+                     "Service", "Planification", "Groupe", "User", "NAT", "IP Pool", "Pool Name", "Action", "Log Traffic", "Commentaire"]
+
+    for col, header in enumerate(regle_headers, 1):
+        cell = ws_regles.cell(row=1, column=col)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+        cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+
+    # Fill Règle data with alternating row colors
+    for row, regle in enumerate(firewall_policies_v6, 2):
+        if row % 2 == 0:  # Even rows
+            for col in range(1, len(regle_headers) + 1):
+                ws_regles.cell(row=row, column=col).fill = light_fill
+
+        # Fill data
+        for col, header in enumerate(regle_headers, 1):
+            ws_regles.cell(row=row, column=col).value = regle.get(header, "")
+
+    # Adjust column width for Règle tab
+    for col in ws_regles.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        adjusted_width = (max_length + 2)
+        ws_regles.column_dimensions[column].width = adjusted_width
+
+    # Add filters to Règle tab headers
+    last_col_letter_regle = openpyxl.utils.get_column_letter(len(regle_headers))
+    ws_regles.auto_filter.ref = f"A1:{last_col_letter_regle}{len(firewall_policies_v6) + 1}"
 
     ### Create Route tab
     ws_routes = wb.create_sheet(title="Route")
@@ -639,7 +677,10 @@ def main():
         zones = parse_zones.parse_zones(input_file, interfaces) 
         ip_pools = parse_ip_pools.parse_ip_pools(input_file)
         virtual_ips = parse_virtual_ips.parse_virtual_ips(input_file)
-        firewall_policies = parse_firewall_policies.parse_firewall_policies(input_file)
+        config_firewall_policies = "config firewall policy"
+        firewall_policies_v4 = parse_firewall_policies.parse_firewall_policies_v4(input_file,config_firewall_policies)
+        config_firewall_policies = "config firewall policy6"
+        firewall_policies_v6 = parse_firewall_policies.parse_firewall_policies_v4(input_file,config_firewall_policies)
         routes = parse_routes.parse_routes(input_file)
         route_policies = parse_route_policies.parse_route_policies(input_file)
         ipsec_phase1_configs = parse_ipsec.parse_ipsec_phase1(input_file)
@@ -647,7 +688,7 @@ def main():
 
         # Create Excel report
         print("Création du rapport Excel...")
-        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies, routes, route_policies, ipsec_phase1_configs, input_file)
+        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies_v4, firewall_policies_v6, routes, route_policies, ipsec_phase1_configs, input_file)
 
         print(f"Rapport Excel créé avec succès: {output_file}")
 

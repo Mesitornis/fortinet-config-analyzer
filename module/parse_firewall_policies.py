@@ -1,7 +1,7 @@
 import re
 
-def parse_firewall_policies(input_file):
-    firewall_policies = []
+def parse_firewall_policies_v4(input_file,config_firewall_policies):
+    firewall_policies_v4 = []
 
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
         lines = f.readlines()
@@ -20,7 +20,7 @@ def parse_firewall_policies(input_file):
                 current_indentation = 0
 
             # Start of firewall policy configuration block (first level)
-            if current_indentation == 0 and stripped_line == "config firewall policy":
+            if current_indentation == 0 and stripped_line == config_firewall_policies:
                 policy_config_started = True
                 indentation_level = current_indentation
                 continue
@@ -37,7 +37,7 @@ def parse_firewall_policies(input_file):
             if current_indentation == indentation_level + 4 and stripped_line.startswith("edit "):
                 # Beginning of a new policy block
                 if current_policy:
-                    firewall_policies.append(current_policy)
+                    firewall_policies_v4.append(current_policy)
 
                 policy_name = stripped_line[5:].strip().strip('"')
                 current_policy = {
@@ -63,7 +63,7 @@ def parse_firewall_policies(input_file):
             # End of a policy block
             if current_policy and current_indentation == indentation_level + 4 and stripped_line == "next":
                 if current_policy:
-                    firewall_policies.append(current_policy)
+                    firewall_policies_v4.append(current_policy)
                 current_policy = None
                 continue
 
@@ -112,6 +112,6 @@ def parse_firewall_policies(input_file):
 
         # Add the last policy if it hasn't been added
         if current_policy:
-            firewall_policies.append(current_policy)
+            firewall_policies_v4.append(current_policy)
 
-    return firewall_policies
+    return firewall_policies_v4
