@@ -533,7 +533,7 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     ws_routes = wb.create_sheet(title="Route")
 
     # Create headers for Route tab
-    route_headers = ["Destination", "Interface", "Gateway", "Priorité", "Distance Administrative", "Commentaire"]
+    route_headers = ["Destination", "Interface", "Gateway", "Priorité", "Distance Administrative", "Blackhole", "Commentaire"]
 
     for col, header in enumerate(route_headers, 1):
         cell = ws_routes.cell(row=1, column=col)
