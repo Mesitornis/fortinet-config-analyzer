@@ -68,9 +68,13 @@ def parse_route_policies(input_file):
                 elif stripped_line.startswith("set src "):
                     addresses = re.findall(r'"([^"]+)"', stripped_line[8:])
                     current_policy["Source Adresse"] = ", ".join(addresses)
+                elif stripped_line.startswith("set srcaddr "):
+                    current_policy["Source Adresse"] = stripped_line[14:].strip().strip('"')
                 elif stripped_line.startswith("set dst "):
                     addresses = re.findall(r'"([^"]+)"', stripped_line[8:])
                     current_policy["Destination Adresse"] = ", ".join(addresses)
+                elif stripped_line.startswith("set dstaddr "):
+                    current_policy["Destination Adresse"] = stripped_line[14:].strip().strip('"')
                 elif stripped_line.startswith("set start-port "):
                     current_policy["Start Port"] = stripped_line[14:].strip().strip('"')
                 elif stripped_line.startswith("set end-port "):
