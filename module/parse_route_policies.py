@@ -47,8 +47,8 @@ def parse_route_policies(input_file):
                     "Start Port": "",
                     "End Port": "",
                     "Gateway": "",
-                    "Status": "",
-                    "Action": ""
+                    "Status": "enable",
+                    "Action": "allow"
                 }
                 continue
 
