@@ -139,7 +139,7 @@ def parse_admins(input_file):
                         subnet_mask = parts[3].strip()
                         trust_host = f"{ip_address} {subnet_mask}"
                         if current_admin["Trust Host IPv4"]:
-                            current_admin["Trust Host IPv4"] += f"; {trust_host}"
+                            current_admin["Trust Host IPv4"] += f" ; {trust_host}"
                         else:
                             current_admin["Trust Host IPv4"] = trust_host
                 elif stripped_line.startswith("set ip6-trusthost"):
@@ -147,7 +147,7 @@ def parse_admins(input_file):
                     if len(parts) > 2:
                         ipv6_address = parts[2].strip()
                         if current_admin["Trust Host IPv6"]:
-                            current_admin["Trust Host IPv6"] += f"; {ipv6_address}"
+                            current_admin["Trust Host IPv6"] += f" ; {ipv6_address}"
                         else:
                             current_admin["Trust Host IPv6"] = ipv6_address
 
