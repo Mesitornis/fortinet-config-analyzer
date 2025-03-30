@@ -5,7 +5,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from module import parse_zones, parse_user_groups, parse_users, parse_address_groups, parse_hosts, parse_dhcp_pools, parse_interfaces, parse_system_info, parse_ip_pools, parse_virtual_ips, parse_firewall_policies, parse_routes, parse_route_policies, parse_ipsec
 
-def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies_v4, firewall_policies_v6, routes, route_policies, ipsec_configs, input_file):
+def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, admins, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies_v4, firewall_policies_v6, routes, route_policies, ipsec_configs, input_file):
     # Create Excel file
     wb = openpyxl.Workbook()
 
@@ -267,6 +267,45 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
     # Add filters to Host Groupe tab headers
     last_col_letter_groupe = openpyxl.utils.get_column_letter(len(host_groupe_headers))
     ws_host_groupe.auto_filter.ref = f"A1:{last_col_letter_groupe}{len(address_groups) + 1}"
+
+ ### Create Admin tab
+    ws_admin = wb.create_sheet(title="Admin")
+
+    # Create headers for Admin tab
+    admin_headers = ["Name", "Profil Type", "Vdom", "Trust Host IPv4", "Trust Host IPv6"]
+
+    for col, header in enumerate(admin_headers, 1):
+        cell = ws_admin.cell(row=1, column=col)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+        cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+
+    # Fill Admin data with alternating row colors
+    light_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+    for row, admin in enumerate(admins, 2):
+        if row % 2 == 0:  # Even rows
+            for col in range(1, len(admin_headers) + 1):
+                ws_admin.cell(row=row, column=col).fill = light_fill
+
+        # Fill data
+        for col, header in enumerate(admin_headers, 1):
+            ws_admin.cell(row=row, column=col).value = admin.get(header, "")
+
+    # Adjust column width for Admin tab
+    for col in ws_admin.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        adjusted_width = (max_length + 2)
+        ws_admin.column_dimensions[column].width = adjusted_width
+
+    # Add filters to Admin tab headers
+    last_col_letter_admin = openpyxl.utils.get_column_letter(len(admin_headers))
+    ws_admin.auto_filter.ref = f"A1:{last_col_letter_admin}{len(admins) + 1}"
 
     ### Create User tab
     ws_users = wb.create_sheet(title="User")
@@ -672,6 +711,7 @@ def main():
         hostsv4 = parse_hosts.update_hostsv4_with_ip_range(hostsv4)
         hostsv6 = parse_hosts.parse_hostsv6(input_file)
         address_groups = parse_address_groups.parse_address_groups(input_file)
+        admins = parse_users.parse_admins(input_file)
         users = parse_users.parse_users(input_file)
         user_groups = parse_user_groups.parse_user_groups(input_file)
         zones = parse_zones.parse_zones(input_file, interfaces) 
@@ -688,7 +728,7 @@ def main():
 
         # Create Excel report
         print("Création du rapport Excel...")
-        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies_v4, firewall_policies_v6, routes, route_policies, ipsec_phase1_configs, input_file)
+        output_file = create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hostsv4, hostsv6, address_groups, admins, users, user_groups, zones, ip_pools, virtual_ips, firewall_policies_v4, firewall_policies_v6, routes, route_policies, ipsec_phase1_configs, input_file)
 
         print(f"Rapport Excel créé avec succès: {output_file}")
 
