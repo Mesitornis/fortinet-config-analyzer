@@ -41,8 +41,8 @@ def create_excel_report(system_info, interfaces, dhcpv4_pools, dhcpv6_pools, hos
 
     # Create headers, now including IPv6 columns
     interface_headers = [
-        "Interface", "Vdom", "Adresse IPv4", "NetMask", "Adresse IPv6", "VLAN ID", "Ip Secondaire",
-        "Accès IPv4", "Accès IPv6", "Zone", "Rôle", "Type", "Membre", "Tag", "Commentaire"
+        "Interface", "Alias", "Vdom", "Adresse IPv4", "NetMask", "Adresse IPv6", "VLAN ID", "Ip Secondaire",
+        "Accès IPv4", "Accès IPv6", "Zone", "Rôle", "Type", "Membre", "Tag", "Description"
     ]
 
     for col, header in enumerate(interface_headers, 1):

@@ -46,6 +46,7 @@ def parse_interfaces(input_file):
                 current_interface = interface_name
                 current_interface_data = {
                     "Interface": interface_name,
+                    "Alias": "",
                     "Vdom": "",
                     "Adresse IPv4": "",
                     "NetMask": "",
@@ -60,7 +61,7 @@ def parse_interfaces(input_file):
                     "Type": "",
                     "Membre": "",
                     "Tag": "",
-                    "Commentaire": ""
+                    "Description": ""
                 }
                 in_secondary_block = False
                 in_ipv6_block = False
@@ -157,8 +158,10 @@ def parse_interfaces(input_file):
                             current_interface_data["Membre"] = " ; ".join(members)
                         else:
                             current_interface_data["Membre"] = stripped_line[11:].strip()
-                    elif stripped_line.startswith("set alias "):
-                        current_interface_data["Commentaire"] = stripped_line[10:].strip().strip('"')
+                    elif stripped_line.startswith("set description "):
+                        current_interface_data["Description"] = stripped_line[16:].strip().strip('"')
+                    elif stripped_line.startswith("set alias"):
+                        current_interface_data["Alias"] = stripped_line[10:].strip().strip('"')
                     elif stripped_line.startswith("set interface "):
                         parent_interface = stripped_line[13:].strip().strip('"')
                         # Temporarily store the parent interface to associate VLAN tag
